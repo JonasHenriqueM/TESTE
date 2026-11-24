@@ -6,7 +6,7 @@ import espacosRoutes from './routes/espacos.js';
 import equipamentosRoutes from './routes/equipamentos.js';
 import reservasRoutes from './routes/reservas.js';
 import faturasRoutes from './routes/faturas.js';
-import funcionarioRoutes from './routes/funcionario.js';
+import funcionariosRoutes from './routes/funcionarios.js';
 import montagensRoutes from './routes/montagens.js';
 import entregasRoutes from './routes/entrega.js';
 
@@ -23,7 +23,7 @@ app.use('/espacos', espacosRoutes);
 app.use('/equipamentos', equipamentosRoutes);
 app.use('/reservas', reservasRoutes);
 app.use('/faturas', faturasRoutes);
-app.use('/funcionarios', funcionarioRoutes);
+app.use('/funcionarios', funcionariosRoutes);
 app.use('/montagens', montagensRoutes);
 app.use('/entregas', entregasRoutes);
 
