@@ -3,7 +3,7 @@ import { pool } from '../db.js';
 
 const router = express.Router();
 
-// GET /reservas - Lista todas as reservas com espaço, itens de ITEMRESERVA e soma total
+// GET /reservas - Lista todas as reservas com espaço, itens de ITEMRESERVA, soma total e status de entrega/montagem
 router.get('/', async (req, res) => {
   try {
     const query = `
@@ -24,7 +24,13 @@ router.get('/', async (req, res) => {
           '-'
         ) AS equipamentos_nome,
         COALESCE(SUM(ir.quantidadealugada * ir.valorunitario), 0.00) AS valorequipamentos,
-        (COALESCE(e.valorespaco, 0.00) + COALESCE(SUM(ir.quantidadealugada * ir.valorunitario), 0.00)) AS valortotal
+        (COALESCE(e.valorespaco, 0.00) + COALESCE(SUM(ir.quantidadealugada * ir.valorunitario), 0.00)) AS valortotal,
+        CASE 
+          WHEN EXISTS (SELECT 1 FROM entrega ent WHERE ent.id_reserva = r.id_reserva)
+            OR EXISTS (SELECT 1 FROM montagem m WHERE m.id_reserva = r.id_reserva)
+          THEN 'Agendada'
+          ELSE 'Não agendada'
+        END AS status_entrega
       FROM reserva r
       INNER JOIN cliente c ON r.id_cliente = c.id_cliente
       LEFT JOIN espaco e ON r.id_espaco = e.id_espaco
@@ -51,6 +57,7 @@ router.post('/', async (req, res) => {
     enderecoevento,
     id_equipamento,
     quantidade_equipamento,
+    equipamentos,
     data,
     hora_inicio,
     hora_fim,
@@ -77,11 +84,17 @@ router.post('/', async (req, res) => {
     );
     const novaReserva = resInsert.rows[0];
 
-    if (id_equipamento) {
-      const qtd = Number(quantidade_equipamento) || 1;
+    // Suporta tanto o array 'equipamentos' quanto o envio único 'id_equipamento'
+    const listaItens = Array.isArray(equipamentos) && equipamentos.length > 0
+      ? equipamentos
+      : (id_equipamento ? [{ id_equipamento, quantidade: quantidade_equipamento || 1 }] : []);
+
+    for (const item of listaItens) {
+      if (!item.id_equipamento) continue;
+      const qtd = Number(item.quantidade) || 1;
       const eqRes = await client.query(
         'SELECT valorequipamento FROM equipamento WHERE id_equipamento = $1',
-        [id_equipamento]
+        [item.id_equipamento]
       );
 
       if (eqRes.rows.length === 0) {
@@ -93,7 +106,7 @@ router.post('/', async (req, res) => {
       await client.query(
         `INSERT INTO itemreserva (id_reserva, id_equipamento, quantidadealugada, valorunitario)
          VALUES ($1, $2, $3, $4)`,
-        [novaReserva.id_reserva, id_equipamento, qtd, valorUnitario]
+        [novaReserva.id_reserva, item.id_equipamento, qtd, valorUnitario]
       );
     }
 
@@ -107,11 +120,24 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT /reservas/:id - Atualiza dados e status da reserva
+// PUT /reservas/:id - Atualiza dados, status e equipamentos da reserva
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { id_cliente, id_espaco, data, hora_inicio, hora_fim, statusreserva, enderecoevento } = req.body;
+  const {
+    id_cliente,
+    id_espaco,
+    data,
+    hora_inicio,
+    hora_fim,
+    statusreserva,
+    enderecoevento,
+    equipamentos
+  } = req.body;
+
+  const client = await pool.connect();
   try {
+    await client.query('BEGIN');
+
     const query = `
       UPDATE reserva 
       SET id_cliente = $1,
@@ -124,7 +150,7 @@ router.put('/:id', async (req, res) => {
       WHERE id_reserva = $8
       RETURNING *;
     `;
-    const { rows } = await pool.query(query, [
+    const { rows } = await client.query(query, [
       id_cliente,
       id_espaco || null,
       data,
@@ -136,11 +162,84 @@ router.put('/:id', async (req, res) => {
     ]);
 
     if (!rows.length) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Reserva não encontrada.' });
     }
+
+    if (Array.isArray(equipamentos)) {
+      await client.query('DELETE FROM itemreserva WHERE id_reserva = $1', [id]);
+
+      for (const item of equipamentos) {
+        if (!item.id_equipamento) continue;
+        const qtd = Number(item.quantidade) || 1;
+
+        const eqRes = await client.query(
+          'SELECT valorequipamento FROM equipamento WHERE id_equipamento = $1',
+          [item.id_equipamento]
+        );
+
+        if (eqRes.rows.length === 0) {
+          throw new Error(`Equipamento ID ${item.id_equipamento} não encontrado.`);
+        }
+
+        const valorUnitario = eqRes.rows[0].valorequipamento || 0;
+
+        await client.query(
+          `INSERT INTO itemreserva (id_reserva, id_equipamento, quantidadealugada, valorunitario)
+           VALUES ($1, $2, $3, $4)`,
+          [id, item.id_equipamento, qtd, valorUnitario]
+        );
+      }
+    }
+
+    await client.query('COMMIT');
+    res.json(rows[0]);
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(400).json({ error: err.detail || err.message });
+  } finally {
+    client.release();
+  }
+});
+
+// PATCH /reservas/:id/status - Atualiza o status da reserva
+router.patch('/:id/status', async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  try {
+    const { rows } = await pool.query(
+      'UPDATE RESERVA SET StatusReserva = $1 WHERE ID_RESERVA = $2 RETURNING *',
+      [status, id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Reserva não encontrada' });
     res.json(rows[0]);
   } catch (err) {
     res.status(400).json({ error: err.detail || err.message });
+  }
+});
+
+// DELETE /reservas/:id - Exclui a reserva e seus vínculos dependentes
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('DELETE FROM montagem WHERE id_reserva = $1', [id]);
+    await client.query('DELETE FROM entrega WHERE id_reserva = $1', [id]);
+    await client.query('DELETE FROM fatura WHERE id_reserva = $1', [id]);
+    await client.query('DELETE FROM itemreserva WHERE id_reserva = $1', [id]);
+    const { rowCount } = await client.query('DELETE FROM reserva WHERE id_reserva = $1', [id]);
+    await client.query('COMMIT');
+
+    if (!rowCount) {
+      return res.status(404).json({ error: 'Reserva não encontrada.' });
+    }
+    res.json({ message: 'Reserva excluída com sucesso.' });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(400).json({ error: err.detail || err.message });
+  } finally {
+    client.release();
   }
 });
 
