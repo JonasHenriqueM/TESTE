@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ALOKA - Locação de Espaços e Equipamentos</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Ícones Lucide -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    dialog::backdrop {
+      background-color: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(2px);
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased">
+
+  <!-- Tela de Login -->
+<div id="tela-login" style="position:fixed; inset:0; background:#1e293b; display:flex; align-items:center; justify-content:center; z-index:9999; font-family:sans-serif;">
+  <form id="form-login" style="background:#fff; padding:2rem; border-radius:8px; width:320px; box-shadow:0 4px 12px rgba(0,0,0,0.3);">
+    <h2 style="margin-top:0; color:#0f172a;">Acesso ALOKA</h2>
+    <input type="text" id="login-usuario" placeholder="Usuário" required style="width:100%; padding:10px; margin-bottom:10px; box-sizing:border-box;">
+    <input type="password" id="login-senha" placeholder="Senha" required style="width:100%; padding:10px; margin-bottom:14px; box-sizing:border-box;">
+    <button type="submit" style="width:100%; padding:10px; background:#2563eb; color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Entrar</button>
+    <p id="login-erro" style="color:#dc2626; font-size:0.9rem; margin-bottom:0;"></p>
+  </form>
+</div>
+
+<!-- Botão de Sair (coloque onde preferir no cabeçalho do sistema) -->
+<button onclick="sair()" style="position:fixed; top:12px; right:12px; padding:6px 12px; background:#ef4444; color:#fff; border:none; border-radius:4px; cursor:pointer; z-index:100;">Sair</button>
+
+  <div class="flex min-h-screen">
+    
+    <!-- Menu Lateral (Sidebar) -->
+    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0">
+      <div>
+        <!-- Logo ALOKA -->
+        <div class="p-6 flex items-center gap-3 border-b border-slate-800">
+          <div class="bg-blue-600 p-2 rounded-lg text-white">
+            <i data-lucide="building-2" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h1 class="text-white font-bold text-xl tracking-wide leading-tight">ALOKA</h1>
+            <p class="text-xs text-slate-400">Locação & Inventário</p>
+          </div>
+        </div>
+
+        <!-- Links de Navegação -->
+        <nav class="p-4 space-y-1" id="sidebarNav">
+          <button onclick="navegarPara('view-dashboard', this)" class="nav-item w-full flex items-center gap-3 bg-blue-600/20 text-blue-400 border-l-4 border-blue-500 px-4 py-3 rounded-r-lg font-medium text-left transition">
+            <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+            Dashboard
+          </button>
+
+          <button onclick="navegarPara('view-reservas', this)" class="nav-item w-full flex items-center gap-3 hover:bg-slate-800 hover:text-white px-4 py-3 rounded-lg transition text-left">
+            <i data-lucide="calendar-days" class="w-5 h-5"></i>
+            Reservas
+          </button>
+
+          <button onclick="navegarPara('view-generica', this, 'Espaços')" class="nav-item w-full flex items-center gap-3 hover:bg-slate-800 hover:text-white px-4 py-3 rounded-lg transition text-left">
+            <i data-lucide="door-open" class="w-5 h-5"></i>
+            Espaços
+          </button>
+
+          <button onclick="navegarPara('view-generica', this, 'Equipamentos')" class="nav-item w-full flex items-center gap-3 hover:bg-slate-800 hover:text-white px-4 py-3 rounded-lg transition text-left">
+            <i data-lucide="camera" class="w-5 h-5"></i>
+            Equipamentos
+          </button>
+
+          <button onclick="navegarPara('view-generica', this, 'Clientes')" class="nav-item w-full flex items-center gap-3 hover:bg-slate-800 hover:text-white px-4 py-3 rounded-lg transition text-left">
+            <i data-lucide="users" class="w-5 h-5"></i>
+            Clientes
+          </button>
+
+          <button onclick="navegarPara('view-funcionarios', this)" class="nav-item w-full flex items-center gap-3 hover:bg-slate-800 hover:text-white px-4 py-3 rounded-lg transition text-left">
+            <i data-lucide="id-card" class="w-5 h-5"></i>
+            Funcionários
+          </button>
+
+          <button onclick="navegarPara('view-entrega', this)" class="nav-item w-full flex items-center gap-3 hover:bg-slate-800 hover:text-white px-4 py-3 rounded-lg transition text-left">
+            <i data-lucide="truck" class="w-5 h-5"></i>
+            Entregas
+          </button>
+
+          <button onclick="navegarPara('view-montagens', this)" class="nav-item w-full flex items-center gap-3 hover:bg-slate-800 hover:text-white px-4 py-3 rounded-lg transition text-left">
+            <i data-lucide="wrench" class="w-5 h-5"></i>
+            Montagens
+          </button>
+
+          <button onclick="navegarPara('view-faturas', this)" class="nav-item w-full flex items-center gap-3 hover:bg-slate-800 hover:text-white px-4 py-3 rounded-lg transition text-left">
+            <i data-lucide="receipt" class="w-5 h-5"></i>
+            Faturas
+          </button>
+
+          <button onclick="navegarPara('view-relatorios', this)" class="nav-item w-full flex items-center gap-3 hover:bg-slate-800 hover:text-white px-4 py-3 rounded-lg transition text-left">
+            <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+            Relatórios
+          </button>
+        </nav>
+      </div>
+
+      <div class="p-4 border-t border-slate-800">
+        <a href="#" class="flex items-center gap-3 hover:bg-slate-800 hover:text-white px-4 py-2 rounded-lg transition text-sm">
+          <i data-lucide="settings" class="w-4 h-4"></i>
+          Configurações
+        </a>
+      </div>
+    </aside>
+
+    <!-- Conteúdo Principal -->
+    <div class="flex-1 flex flex-col min-w-0">
+      
+      <!-- Barra Superior (Header) -->
+      <header class="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between">
+        <div class="relative w-96">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+          <input 
+            type="text" 
+            id="searchInput"
+            onkeyup="filtrarTabela()"
+            placeholder="Buscar cliente, espaço ou equipamento..." 
+            class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+        </div>
+      </header>
+
+      <!-- ========================================== -->
+      <!-- TELA 1: DASHBOARD                          -->
+      <!-- ========================================== -->
+      <main id="view-dashboard" class="page-view p-8 space-y-6 max-w-7xl w-full mx-auto">
+        
+        <div class="flex items-center justify-between">
+          <h2 class="text-2xl font-bold text-slate-800">Visão Geral da Locação</h2>
+        </div>
+
+        <!-- Botões de Ação Rápida -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <button onclick="abrirDialogReserva()" class="bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 p-4 rounded-xl shadow-sm flex items-center gap-4 transition text-left group cursor-pointer">
+            <div class="bg-blue-100 text-blue-600 p-3 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition">
+              <i data-lucide="plus" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <p class="font-semibold text-slate-800">Nova Reserva</p>
+              <p class="text-xs text-slate-500">Agendar espaço ou equipamento</p>
+            </div>
+          </button>
+
+          <button onclick="abrirDialogCliente()" class="bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 p-4 rounded-xl shadow-sm flex items-center gap-4 transition text-left group cursor-pointer">
+            <div class="bg-indigo-100 text-indigo-600 p-3 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition">
+              <i data-lucide="user-plus" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <p class="font-semibold text-slate-800">Novo Cliente</p>
+              <p class="text-xs text-slate-500">Adicionar novo locatário</p>
+            </div>
+          </button>
+
+          <button onclick="abrirDialogItem()" class="bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 p-4 rounded-xl shadow-sm flex items-center gap-4 transition text-left group cursor-pointer">
+            <div class="bg-emerald-100 text-emerald-600 p-3 rounded-lg group-hover:bg-emerald-600 group-hover:text-white transition">
+              <i data-lucide="package-plus" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <p class="font-semibold text-slate-800">Adicionar Espaço/Equipamento</p>
+              <p class="text-xs text-slate-500">Novo espaço ou equipamento</p>
+            </div>
+          </button>
+        </div>
+
+        <!-- Cards de Indicadores (KPIs) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-slate-500 uppercase">Total de Espaços</p>
+              <p id="kpi-espacos" class="text-2xl font-bold text-slate-800 mt-1">-</p>
+            </div>
+            <div class="bg-emerald-50 text-emerald-600 p-3 rounded-lg">
+              <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-slate-500 uppercase">Equipamentos</p>
+              <p id="kpi-equipamentos" class="text-2xl font-bold text-slate-800 mt-1">-</p>
+            </div>
+            <div class="bg-blue-50 text-blue-600 p-3 rounded-lg">
+              <i data-lucide="video" class="w-6 h-6"></i>
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-slate-500 uppercase">Reservas Ativas</p>
+              <p id="kpi-reservas" class="text-2xl font-bold text-slate-800 mt-1">-</p>
+            </div>
+            <div class="bg-amber-50 text-amber-600 p-3 rounded-lg">
+              <i data-lucide="clock" class="w-6 h-6"></i>
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-slate-500 uppercase">Clientes Cadastrados</p>
+              <p id="kpi-clientes" class="text-2xl font-bold text-slate-800 mt-1">-</p>
+            </div>
+            <div class="bg-purple-50 text-purple-600 p-3 rounded-lg">
+              <i data-lucide="users" class="w-6 h-6"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabela de Locações Recentes -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <div class="overflow-x-auto">
+            <table id="tabelaReservas" class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-200 text-xs text-slate-500 uppercase">
+                  <th class="py-3 px-4">ID / Data</th>
+                  <th class="py-3 px-4">Cliente</th>
+                  <th class="py-3 px-4">Espaço & Equipamentos</th>
+                  <th class="py-3 px-4">Valor Total</th>
+                  <th class="py-3 px-4">Status</th>
+                </tr>
+              </thead>
+              <tbody id="corpoTabela" class="divide-y divide-slate-100 text-sm">
+                <tr>
+                  <td colspan="5" class="py-8 text-center text-slate-400">Carregando locações recentes...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </main>
+
+      <!-- ========================================== -->
+      <!-- TELA 2: LISTAGEM DE RESERVAS               -->
+      <!-- ========================================== -->
+      <main id="view-reservas" class="page-view hidden p-8 space-y-6 max-w-7xl w-full mx-auto">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-800">Reservas</h2>
+            <p class="text-sm text-slate-500">Locação híbrida de espaços, equipamentos e cálculo consolidado</p>
+          </div>
+          <button onclick="abrirDialogReserva()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> Nova Reserva
+          </button>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase">
+                <th class="py-3.5 px-4">ID</th>
+                <th class="py-3.5 px-4">Cliente</th>
+                <th class="py-3.5 px-4">Espaço Alocado</th>
+                <th class="py-3.5 px-4">Valor Espaço</th>
+                <th class="py-3.5 px-4">Equipamento</th>
+                <th class="py-3.5 px-4">Valor Equip.</th>
+                <th class="py-3.5 px-4">Data / Horário</th>
+                <th class="py-3.5 px-4">Valor Total</th>
+                <th class="py-3.5 px-4">Status</th>
+                <th class="py-3.5 px-4">Entrega</th>
+                <th class="py-3.5 px-4 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="lista-reservas-api">
+              <tr><td colspan="11" class="py-11 text-center text-slate-400 text-sm">Carregando reservas...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+
+      <!-- ========================================== -->
+      <!-- TELA 3: LISTAGEM DE FUNCIONÁRIOS           -->
+      <!-- ========================================== -->
+      <main id="view-funcionarios" class="page-view hidden p-8 space-y-6 max-w-7xl w-full mx-auto">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-800">Funcionários</h2>
+            <p class="text-sm text-slate-500">Listagem da equipe interna e operadores de entrega/montagem</p>
+          </div>
+          <button onclick="abrirDialogFuncionario()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> Novo Funcionário
+          </button>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase">
+                <th class="py-3.5 px-6">ID</th>
+                <th class="py-3.5 px-6">Nome</th>
+                <th class="py-3.5 px-6">Cargo / Função</th>
+                <th class="py-3.5 px-6">Turno</th>
+                <th class="py-3.5 px-6">Contato</th>
+                <th class="py-3.5 px-6 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="lista-funcionarios-api">
+              <tr><td colspan="6" class="py-10 text-center text-slate-400 text-sm">Carregando funcionários...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+
+      <!-- ========================================== -->
+      <!-- TELA 4: LISTAGEM DE ENTREGAS               -->
+      <!-- ========================================== -->
+      <main id="view-entrega" class="page-view hidden p-8 space-y-6 max-w-7xl w-full mx-auto">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-800">Entregas & Logística</h2>
+            <p class="text-sm text-slate-500">Entregas de equipamentos em eventos privados (reservas sem espaço alocado)</p>
+          </div>
+          <button onclick="abrirDialogEntrega()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> Nova Entrega
+          </button>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase">
+                <th class="py-3.5 px-6">Cód. Reserva</th>
+                <th class="py-3.5 px-6">Cliente</th>
+                <th class="py-3.5 px-6">Endereço de Entrega</th>
+                <th class="py-3.5 px-6">Equipamento</th>
+                <th class="py-3.5 px-6">Funcionário</th>
+                <th class="py-3.5 px-6">Data e Hora</th>
+                <th class="py-3.5 px-6">Modalidade</th>
+                <th class="py-3.5 px-6 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="lista-entregas-api">
+              <tr><td colspan="8" class="py-10 text-center text-slate-400 text-sm">Carregando entregas...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+
+      <!-- ========================================== -->
+      <!-- TELA 5: MONTAGENS (RELACIONAMENTO TERNÁRIO)-->
+      <!-- ========================================== -->
+      <main id="view-montagens" class="page-view hidden p-8 space-y-6 max-w-7xl w-full mx-auto">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-800">Montagens Técnicas</h2>
+            <p class="text-sm text-slate-500">Montagens de equipamentos em espaços alocados</p>
+          </div>
+          <button onclick="abrirDialogMontagem()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> Nova Montagem
+          </button>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase">
+                <th class="py-3.5 px-6">Cód. Reserva</th>
+                <th class="py-3.5 px-6">Cliente / Local</th>
+                <th class="py-3.5 px-6">Equipamento</th>
+                <th class="py-3.5 px-6">Funcionário Responsável</th>
+                <th class="py-3.5 px-6">Data e Hora do Evento</th>
+                <th class="py-3.5 px-6 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="lista-montagens-api">
+              <tr><td colspan="6" class="py-10 text-center text-slate-400 text-sm">Carregando montagens...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+
+      <!-- ========================================== -->
+      <!-- TELA 6: ESPAÇOS, EQUIPAMENTOS E CLIENTES   -->
+      <!-- ========================================== -->
+      <main id="view-generica" class="page-view hidden p-8 space-y-6 max-w-7xl w-full mx-auto">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 id="titulo-tela-generica" class="text-2xl font-bold text-slate-800">Módulo</h2>
+            <p class="text-sm text-slate-500">Registros carregados diretamente do PostgreSQL</p>
+          </div>
+          <button id="btn-novo-generico" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> Novo Registro
+          </button>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead id="head-generica-api" class="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase"></thead>
+            <tbody id="lista-generica-api" class="divide-y divide-slate-100 text-sm">
+              <tr><td class="py-10 text-center text-slate-400">Carregando registros...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+
+      <!-- ========================================== -->
+      <!-- TELA 7: FATURAS                            -->
+      <!-- ========================================== -->
+      <main id="view-faturas" class="page-view hidden p-8 space-y-6 max-w-7xl w-full mx-auto">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-800">Faturas & Pagamentos</h2>
+            <p class="text-sm text-slate-500">Controle financeiro das reservas, vencimentos e comprovantes</p>
+          </div>
+          <button onclick="abrirDialogFatura()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> Nova Fatura
+          </button>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase">
+                <th class="py-3.5 px-6">Cód. Reserva</th>
+                <th class="py-3.5 px-6">Cliente</th>
+                <th class="py-3.5 px-6">Valor Total</th>
+                <th class="py-3.5 px-6">Vencimento</th>
+                <th class="py-3.5 px-6">Data Pagamento</th>
+                <th class="py-3.5 px-6">Comprovante</th>
+                <th class="py-3.5 px-6">Status</th>
+                <th class="py-3.5 px-6 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="lista-faturas-api">
+              <tr><td colspan="8" class="py-10 text-center text-slate-400 text-sm">Carregando faturas...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+
+      <!-- ========================================== -->
+      <!-- TELA 8: RELATÓRIOS (HAVING)                -->
+      <!-- ========================================== -->
+      <main id="view-relatorios" class="page-view hidden p-8 space-y-6 max-w-7xl w-full mx-auto">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-800">Relatório de Clientes Frequentes</h2>
+            <p class="text-sm text-slate-500">Consulta agregada com GROUP BY e HAVING no PostgreSQL</p>
+          </div>
+
+          <div class="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+            <label for="filtroMinReservas" class="text-xs font-semibold text-slate-600 uppercase pl-2">Mínimo de Reservas:</label>
+            <input type="number" id="filtroMinReservas" value="2" min="1" class="w-20 border border-slate-300 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button onclick="carregarRelatorios()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition cursor-pointer">
+              Filtrar
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase">
+                <th class="py-3.5 px-6">ID</th>
+                <th class="py-3.5 px-6">Cliente</th>
+                <th class="py-3.5 px-6">E-mail</th>
+                <th class="py-3.5 px-6">Total de Reservas</th>
+                <th class="py-3.5 px-6">Receita Gerada</th>
+              </tr>
+            </thead>
+            <tbody id="lista-relatorios-api" class="divide-y divide-slate-100 text-sm">
+              <tr><td colspan="5" class="py-10 text-center text-slate-400">Clique em Filtrar para carregar o relatório...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- CAIXAS DE DIÁLOGO (<dialog>) PARA INSERÇÃO E EDIÇÃO       -->
+  <!-- ========================================================= -->
+
+  <!-- CAIXA DE DIÁLOGO: RESERVA (NOVA / EDITAR) -->
+  <dialog id="dialogReserva" class="rounded-xl max-w-md w-full p-0 shadow-2xl border border-slate-200 bg-white text-slate-800 m-auto">
+    <div class="p-6">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <div class="bg-blue-100 text-blue-600 p-1.5 rounded-lg">
+            <i data-lucide="calendar-plus" class="w-5 h-5"></i>
+          </div>
+          <h3 id="tituloDialogReserva" class="font-bold text-lg text-slate-800">Nova Reserva</h3>
+        </div>
+        <button type="button" onclick="fecharDialog('dialogReserva')" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form onsubmit="salvarReserva(event)" class="space-y-4">
+        <input type="hidden" id="resIdEdicao" value="">
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Cliente</label>
+          <select id="resCliente" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Carregando clientes...</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Espaço Alocado (Opcional)</label>
+          <select id="resEspaco" onchange="aoSelecionarEspacoReserva()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Nenhum (Somente Equipamentos)</option>
+          </select>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="block text-xs font-semibold text-slate-600 uppercase">Equipamentos (Opcional)</label>
+            <button type="button" onclick="adicionarLinhaEquipamentoReserva()" class="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+              + Adicionar Equipamento
+            </button>
+          </div>
+          <div id="listaEquipamentosReserva" class="space-y-2 max-h-44 overflow-y-auto pr-1"></div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Endereço do Evento</label>
+          <input type="text" id="resEnderecoEvento" placeholder="Opcional (usa endereço do cliente se vazio)" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Data</label>
+            <input type="date" id="resData" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div id="grupoStatusReserva" class="hidden">
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Status</label>
+            <select id="resStatus" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="CONFIRMADA">CONFIRMADA</option>
+              <option value="PENDENTE">PENDENTE</option>
+              <option value="CANCELADA">CANCELADA</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Hora Início</label>
+            <input type="time" id="resHoraInicio" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Hora Fim</label>
+            <input type="time" id="resHoraFim" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+          <button type="button" onclick="fecharDialog('dialogReserva')" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">Cancelar</button>
+          <button type="submit" id="btnSalvarReserva" class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg">Salvar Reserva</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- CAIXA DE DIÁLOGO: CLIENTE (NOVO / EDITAR) -->
+  <dialog id="dialogCliente" class="rounded-xl max-w-md w-full p-0 shadow-2xl border border-slate-200 bg-white text-slate-800 m-auto">
+    <div class="p-6">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <div class="bg-indigo-100 text-indigo-600 p-1.5 rounded-lg">
+            <i data-lucide="user-plus" class="w-5 h-5"></i>
+          </div>
+          <h3 id="tituloDialogCliente" class="font-bold text-lg text-slate-800">Novo Cliente</h3>
+        </div>
+        <button type="button" onclick="fecharDialog('dialogCliente')" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form onsubmit="salvarCliente(event)" class="space-y-4">
+        <input type="hidden" id="cliIdEdicao" value="">
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nome Completo / Razão Social</label>
+          <input type="text" id="cliNome" required placeholder="Ex: João da Silva" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Tipo de Cliente</label>
+          <select id="cliTipo" onchange="alternarTipoCliente()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="PF">Pessoa Física (PF)</option>
+            <option value="PJ">Pessoa Jurídica (PJ)</option>
+          </select>
+        </div>
+
+        <div id="gridDocumentosCliente" class="grid grid-cols-2 gap-3">
+          <div>
+            <label id="labelCliDocumento" class="block text-xs font-semibold text-slate-600 uppercase mb-1">CPF (11 dígitos)</label>
+            <input 
+              type="text" 
+              id="cliDocumento" 
+              required 
+              maxlength="11" 
+              pattern="\d{11}" 
+              oninput="this.value = this.value.replace(/\D/g, '')"
+              title="Informe exatamente 11 números"
+              placeholder="Somente 11 números" 
+              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+          </div>
+          <div id="grupoCliRg">
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">RG (Opcional)</label>
+            <input type="text" id="cliRg" placeholder="Ex: 20050123456" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Telefone</label>
+            <input type="text" id="cliTelefone" required placeholder="(85) 90000-0000" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">E-mail / Contato</label>
+            <input type="email" id="cliEmail" required placeholder="cliente@email.com" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Endereço</label>
+          <input type="text" id="cliEndereco" required placeholder="Rua, número, bairro" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+          <button type="button" onclick="fecharDialog('dialogCliente')" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">Cancelar</button>
+          <button type="submit" id="btnSalvarCliente" class="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg">Salvar Cliente</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- CAIXA DE DIÁLOGO: ESPAÇOS E EQUIPAMENTOS (NOVO / EDITAR) -->
+  <dialog id="dialogItem" class="rounded-xl max-w-md w-full p-0 shadow-2xl border border-slate-200 bg-white text-slate-800 m-auto">
+    <div class="p-6">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <div class="bg-emerald-100 text-emerald-600 p-1.5 rounded-lg">
+            <i data-lucide="package-plus" class="w-5 h-5"></i>
+          </div>
+          <h3 id="tituloDialogItem" class="font-bold text-lg text-slate-800">Adicionar Item</h3>
+        </div>
+        <button type="button" onclick="fecharDialog('dialogItem')" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form onsubmit="salvarItem(event)" class="space-y-4">
+        <input type="hidden" id="itemIdEdicao" value="">
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Tipo de Recurso</label>
+          <select id="itemTipo" onchange="alternarCamposItem()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <option value="espacos">Espaço Físico (Sala, Estúdio, Auditório)</option>
+            <option value="equipamentos">Equipamento (Câmera, Projetor, Áudio)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nome / Identificação</label>
+          <input type="text" id="itemNome" required placeholder="Ex: Sala de Reunião B" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label id="labelItemDetalhe" class="block text-xs font-semibold text-slate-600 uppercase mb-1">Capacidade</label>
+            <input type="text" id="itemDetalhe" placeholder="Ex: 20 pessoas" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Valor (R$)</label>
+            <input type="number" step="0.01" id="itemValor" required placeholder="150.00" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+        </div>
+
+        <!-- Campos extras para Espaços -->
+        <div id="camposExtrasEspaco" class="space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Endereço / Localização</label>
+            <input type="text" id="itemEndereco" placeholder="Ex: Bloco A - 2º Andar" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Descrição</label>
+            <input type="text" id="itemDescricao" placeholder="Ex: Climatizado, Wi-Fi dedicado" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+        </div>
+
+        <!-- Campos extras para Equipamentos -->
+        <div id="camposExtrasEquipamento" class="hidden space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Marca</label>
+              <input type="text" id="itemMarca" placeholder="Ex: Sony, JBL" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Quantidade</label>
+              <input type="number" id="itemQuantidade" min="1" value="1" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Observações</label>
+            <input type="text" id="itemObservacoes" placeholder="Ex: Acompanha case e cabos" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+          <button type="button" onclick="fecharDialog('dialogItem')" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">Cancelar</button>
+          <button type="submit" id="btnSalvarItem" class="px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg">Cadastrar Item</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- CAIXA DE DIÁLOGO: FUNCIONÁRIO (NOVO / EDITAR) -->
+  <dialog id="dialogFuncionario" class="rounded-xl max-w-md w-full p-0 shadow-2xl border border-slate-200 bg-white text-slate-800 m-auto">
+    <div class="p-6">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <div class="bg-blue-100 text-blue-600 p-1.5 rounded-lg">
+            <i data-lucide="id-card" class="w-5 h-5"></i>
+          </div>
+          <h3 id="tituloDialogFuncionario" class="font-bold text-lg text-slate-800">Novo Funcionário</h3>
+        </div>
+        <button type="button" onclick="fecharDialog('dialogFuncionario')" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form onsubmit="salvarFuncionario(event)" class="space-y-4">
+        <input type="hidden" id="funcIdEdicao" value="">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nome Completo</label>
+          <input type="text" id="funcNome" required placeholder="Ex: Carlos Mendes" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Cargo / Função</label>
+            <input type="text" id="funcCargo" required placeholder="Ex: Técnico de Som" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Turno</label>
+            <select id="funcTurno" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="MANHÃ">MANHÃ</option>
+              <option value="TARDE">TARDE</option>
+              <option value="NOITE">NOITE</option>
+              <option value="INTEGRAL">INTEGRAL</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Contato / Telefone</label>
+          <input type="text" id="funcContato" required placeholder="(85) 99999-0000" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+          <button type="button" onclick="fecharDialog('dialogFuncionario')" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">Cancelar</button>
+          <button type="submit" id="btnSalvarFuncionario" class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg">Salvar Funcionário</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- CAIXA DE DIÁLOGO: ENTREGA (NOVA / EDITAR) -->
+  <dialog id="dialogEntrega" class="rounded-xl max-w-md w-full p-0 shadow-2xl border border-slate-200 bg-white text-slate-800 m-auto">
+    <div class="p-6">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <div class="bg-amber-100 text-amber-600 p-1.5 rounded-lg">
+            <i data-lucide="truck" class="w-5 h-5"></i>
+          </div>
+          <h3 id="tituloDialogEntrega" class="font-bold text-lg text-slate-800">Nova Entrega</h3>
+        </div>
+        <button type="button" onclick="fecharDialog('dialogEntrega')" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form onsubmit="salvarEntrega(event)" class="space-y-4">
+        <input type="hidden" id="entIdEdicao" value="">
+
+        <div id="grupoEntReserva">
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Reserva (Somente Equipamentos)</label>
+          <select id="entReserva" onchange="aoSelecionarReservaEntrega()" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Carregando reservas elegíveis...</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Técnico / Funcionário Responsável</label>
+          <select id="entFuncionario" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Carregando funcionários...</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Endereço de Entrega</label>
+          <input type="text" id="entEndereco" required placeholder="Endereço do evento / cliente" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Data (da Reserva)</label>
+            <input type="date" id="entData" readonly class="w-full border border-slate-200 bg-slate-100 text-slate-500 cursor-not-allowed rounded-lg px-3 py-2 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Horário (da Reserva)</label>
+            <input type="time" id="entHorario" readonly class="w-full border border-slate-200 bg-slate-100 text-slate-500 cursor-not-allowed rounded-lg px-3 py-2 text-sm">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Modalidade</label>
+          <select id="entTipo" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="ENTREGA EM EVENTO PRÓPRIO">Evento Próprio</option>
+            <option value="MONTAGEM">Montagem (Espaço ALOKA)</option>
+          </select>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+          <button type="button" onclick="fecharDialog('dialogEntrega')" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">Cancelar</button>
+          <button type="submit" id="btnSalvarEntrega" class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg">Agendar Entrega</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- CAIXA DE DIÁLOGO: MONTAGEM (NOVA / EDITAR) -->
+  <dialog id="dialogMontagem" class="rounded-xl max-w-md w-full p-0 shadow-2xl border border-slate-200 bg-white text-slate-800 m-auto">
+    <div class="p-6">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <div class="bg-blue-100 text-blue-600 p-1.5 rounded-lg">
+            <i data-lucide="wrench" class="w-5 h-5"></i>
+          </div>
+          <h3 id="tituloDialogMontagem" class="font-bold text-lg text-slate-800">Nova Montagem Técnica</h3>
+        </div>
+        <button type="button" onclick="fecharDialog('dialogMontagem')" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form onsubmit="salvarMontagem(event)" class="space-y-4">
+        <input type="hidden" id="montIdEdicao" value="">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">1. Reserva (Com Espaço Alocado)</label>
+          <select id="montReserva" onchange="aoSelecionarReservaMontagem()" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Carregando reservas...</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Data (da Reserva)</label>
+            <input type="date" id="montData" readonly class="w-full border border-slate-200 bg-slate-100 text-slate-500 cursor-not-allowed rounded-lg px-3 py-2 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Horário (da Reserva)</label>
+            <input type="time" id="montHorario" readonly class="w-full border border-slate-200 bg-slate-100 text-slate-500 cursor-not-allowed rounded-lg px-3 py-2 text-sm">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">2. Equipamento a Montar</label>
+          <select id="montEquipamento" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Carregando equipamentos...</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">3. Funcionário Técnico Responsável</label>
+          <select id="montFuncionario" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Carregando funcionários...</option>
+          </select>
+        </div>
+        <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+          <button type="button" onclick="fecharDialog('dialogMontagem')" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">Cancelar</button>
+          <button type="submit" id="btnSalvarMontagem" class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg">Vincular Montagem</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- CAIXA DE DIÁLOGO: FATURA (NOVA / EDITAR) -->
+  <dialog id="dialogFatura" class="rounded-xl max-w-md w-full p-0 shadow-2xl border border-slate-200 bg-white text-slate-800 m-auto">
+    <div class="p-6">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <div class="bg-emerald-100 text-emerald-600 p-1.5 rounded-lg">
+            <i data-lucide="receipt" class="w-5 h-5"></i>
+          </div>
+          <h3 id="tituloDialogFatura" class="font-bold text-lg text-slate-800">Nova Fatura</h3>
+        </div>
+        <button type="button" onclick="fecharDialog('dialogFatura')" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form onsubmit="salvarFatura(event)" class="space-y-4">
+        <input type="hidden" id="fatIdEdicao" value="">
+
+        <div id="grupoFatReserva">
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Reserva (Sem Fatura Vinculada)</label>
+          <select id="fatReserva" onchange="aoSelecionarReservaFatura()" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Carregando reservas disponíveis...</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Valor Total (R$)</label>
+            <input type="number" step="0.01" id="fatValor" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Data Vencimento</label>
+            <input type="date" id="fatVencimento" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Data Pagamento (Opcional)</label>
+            <input type="date" id="fatPagamento" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Comprovante / Observação</label>
+          <input type="text" id="fatComprovante" placeholder="Ex: PIX #83920 ou Transferência" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+          <button type="button" onclick="fecharDialog('dialogFatura')" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">Cancelar</button>
+          <button type="submit" id="btnSalvarFatura" class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg">Salvar Fatura</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+<script src="ALOKASCRIPTS.js"></script>
+</body>
+</html>
