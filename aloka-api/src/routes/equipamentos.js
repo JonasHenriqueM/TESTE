@@ -3,13 +3,49 @@ import { pool } from '../db.js';
 
 const router = Router();
 
-// GET /equipamentos - Lista todos os equipamentos
+// GET /equipamentos - Lista todos os equipamentos ou filtra por substring via ?busca=
 router.get('/', async (req, res) => {
+  const { busca } = req.query;
+
   try {
+    if (busca && busca.trim() !== '') {
+      const termo = `%${busca.trim()}%`;
+      const { rows } = await pool.query(
+        `SELECT *, observacao AS observacoes, observacao AS descricao
+         FROM equipamento
+         WHERE nomeequipamento ILIKE $1
+            OR marca ILIKE $1
+            OR numeropatrimonio ILIKE $1
+         ORDER BY id_equipamento DESC`,
+        [termo]
+      );
+      return res.json(rows);
+    }
+
     const { rows } = await pool.query(
       'SELECT *, observacao AS observacoes, observacao AS descricao FROM equipamento ORDER BY id_equipamento DESC'
     );
     res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /equipamentos/:id - Consulta específica de um equipamento pelo ID
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const { rows } = await pool.query(
+      'SELECT *, observacao AS observacoes, observacao AS descricao FROM equipamento WHERE id_equipamento = $1',
+      [id]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ error: 'Equipamento não encontrado.' });
+    }
+
+    res.json(rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

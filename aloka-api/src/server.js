@@ -11,6 +11,7 @@ import faturasRoutes from './routes/faturas.js';
 import funcionariosRoutes from './routes/funcionarios.js';
 import montagensRoutes from './routes/montagens.js';
 import entregasRoutes from './routes/entrega.js';
+import relatoriosRoutes from './routes/relatorios.js'; // <-- ADICIONE ESTA LINHA
 
 const app = express();
 app.use(cors());
@@ -52,7 +53,6 @@ app.post('/login', (req, res) => {
 });
 
 // Rotas da API
-// (Quando a tela de login estiver pronta no front-end, adicione autenticarToken antes das rotas, ex: app.use('/clientes', autenticarToken, clientesRoutes))
 app.use('/clientes', clientesRoutes);
 app.use('/espacos', espacosRoutes);
 app.use('/equipamentos', equipamentosRoutes);
@@ -61,6 +61,7 @@ app.use('/faturas', faturasRoutes);
 app.use('/funcionarios', funcionariosRoutes);
 app.use('/montagens', montagensRoutes);
 app.use('/entregas', entregasRoutes);
+app.use('/relatorios', relatoriosRoutes); // <-- ADICIONE ESTA LINHA
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

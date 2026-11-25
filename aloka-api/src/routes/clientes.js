@@ -3,8 +3,13 @@ import { pool } from '../db.js';
 
 const router = Router();
 
-// GET /clientes - Lista todos os clientes (PF, PJ e telefones)
+// GET /clientes - Lista todos os clientes ou filtra por substring (nome ou e-mail) via ?busca=
 router.get('/', async (req, res) => {
+  const { busca } = req.query;
+  const temBusca = busca && busca.trim() !== '';
+  const valores = temBusca ? [`%${busca.trim()}%`] : [];
+  const filtroWhere = temBusca ? 'WHERE c.nome ILIKE $1 OR c.email ILIKE $1' : '';
+
   try {
     const query = `
       SELECT 
@@ -12,16 +17,49 @@ router.get('/', async (req, res) => {
         pf.cpf, pf.rg,
         pj.cnpj, pj.razaosocial,
         CASE WHEN pf.id_cliente IS NOT NULL THEN 'PF' ELSE 'PJ' END AS tipo_cliente,
-        COALESCE(array_agg(tc.numero_cliente) FILTER (WHERE tc.numero_cliente IS NOT NULL), '{}') AS telefones
+        COALESCE(array_agg(tc.numero_cliente) FILTER (WHERE tc.numero_cliente IS NOT NULL), '{}') AS telefones,
+        (array_agg(tc.numero_cliente) FILTER (WHERE tc.numero_cliente IS NOT NULL))[1] AS telefone
       FROM CLIENTE c
       LEFT JOIN PESSOA_FISICA pf ON c.id_cliente = pf.id_cliente
       LEFT JOIN PESSOA_JURIDICA pj ON c.id_cliente = pj.id_cliente
       LEFT JOIN TELEFONE_CLIENTE tc ON c.id_cliente = tc.id_cliente
+      ${filtroWhere}
       GROUP BY c.id_cliente, pf.id_cliente, pf.cpf, pf.rg, pj.id_cliente, pj.cnpj, pj.razaosocial
       ORDER BY c.id_cliente DESC;
     `;
-    const { rows } = await pool.query(query);
+    const { rows } = await pool.query(query, valores);
     res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /clientes/:id - Consulta específica de um cliente pelo ID
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const query = `
+      SELECT 
+        c.id_cliente, c.nome, c.email, c.endereco,
+        pf.cpf, pf.rg,
+        pj.cnpj, pj.razaosocial,
+        CASE WHEN pf.id_cliente IS NOT NULL THEN 'PF' ELSE 'PJ' END AS tipo_cliente,
+        COALESCE(array_agg(tc.numero_cliente) FILTER (WHERE tc.numero_cliente IS NOT NULL), '{}') AS telefones,
+        (array_agg(tc.numero_cliente) FILTER (WHERE tc.numero_cliente IS NOT NULL))[1] AS telefone
+      FROM CLIENTE c
+      LEFT JOIN PESSOA_FISICA pf ON c.id_cliente = pf.id_cliente
+      LEFT JOIN PESSOA_JURIDICA pj ON c.id_cliente = pj.id_cliente
+      LEFT JOIN TELEFONE_CLIENTE tc ON c.id_cliente = tc.id_cliente
+      WHERE c.id_cliente = $1
+      GROUP BY c.id_cliente, pf.id_cliente, pf.cpf, pf.rg, pj.id_cliente, pj.cnpj, pj.razaosocial;
+    `;
+    const { rows } = await pool.query(query, [id]);
+
+    if (!rows.length) {
+      return res.status(404).json({ error: 'Cliente não encontrado.' });
+    }
+
+    res.json(rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

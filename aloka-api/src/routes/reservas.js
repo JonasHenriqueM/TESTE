@@ -49,6 +49,48 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /reservas/:id - Consulta específica de uma reserva + lista de equipamentos vinculados
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const resReserva = await pool.query(
+      `SELECT 
+        r.*,
+        c.nome AS cliente_nome,
+        e.nomeespaco AS espaco_nome,
+        COALESCE(e.valorespaco, 0.00) AS valorespaco
+       FROM reserva r
+       INNER JOIN cliente c ON r.id_cliente = c.id_cliente
+       LEFT JOIN espaco e ON r.id_espaco = e.id_espaco
+       WHERE r.id_reserva = $1`,
+      [id]
+    );
+
+    if (resReserva.rows.length === 0) {
+      return res.status(404).json({ error: 'Reserva não encontrada.' });
+    }
+
+    const resItens = await pool.query(
+      `SELECT 
+        ir.id_equipamento, 
+        ir.quantidadealugada AS quantidade, 
+        ir.valorunitario, 
+        eq.nomeequipamento
+       FROM itemreserva ir
+       INNER JOIN equipamento eq ON ir.id_equipamento = eq.id_equipamento
+       WHERE ir.id_reserva = $1`,
+      [id]
+    );
+
+    res.json({
+      ...resReserva.rows[0],
+      itens_equipamentos: resItens.rows
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /reservas - Cria reserva (híbrida) e vincula equipamento em ITEMRESERVA se informado
 router.post('/', async (req, res) => {
   const {
@@ -194,47 +236,6 @@ router.put('/:id', async (req, res) => {
 
     await client.query('COMMIT');
     res.json(rows[0]);
-  } catch (err) {
-    await client.query('ROLLBACK');
-    res.status(400).json({ error: err.detail || err.message });
-  } finally {
-    client.release();
-  }
-});
-
-// PATCH /reservas/:id/status - Atualiza o status da reserva
-router.patch('/:id/status', async (req, res) => {
-  const { id } = req.params;
-  const { status } = req.body;
-  try {
-    const { rows } = await pool.query(
-      'UPDATE RESERVA SET StatusReserva = $1 WHERE ID_RESERVA = $2 RETURNING *',
-      [status, id]
-    );
-    if (rows.length === 0) return res.status(404).json({ error: 'Reserva não encontrada' });
-    res.json(rows[0]);
-  } catch (err) {
-    res.status(400).json({ error: err.detail || err.message });
-  }
-});
-
-// DELETE /reservas/:id - Exclui a reserva e seus vínculos dependentes
-router.delete('/:id', async (req, res) => {
-  const { id } = req.params;
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    await client.query('DELETE FROM montagem WHERE id_reserva = $1', [id]);
-    await client.query('DELETE FROM entrega WHERE id_reserva = $1', [id]);
-    await client.query('DELETE FROM fatura WHERE id_reserva = $1', [id]);
-    await client.query('DELETE FROM itemreserva WHERE id_reserva = $1', [id]);
-    const { rowCount } = await client.query('DELETE FROM reserva WHERE id_reserva = $1', [id]);
-    await client.query('COMMIT');
-
-    if (!rowCount) {
-      return res.status(404).json({ error: 'Reserva não encontrada.' });
-    }
-    res.json({ message: 'Reserva excluída com sucesso.' });
   } catch (err) {
     await client.query('ROLLBACK');
     res.status(400).json({ error: err.detail || err.message });
